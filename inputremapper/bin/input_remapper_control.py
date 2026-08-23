@@ -28,6 +28,7 @@ from enum import Enum
 from typing import Optional
 
 import gi
+from dasbus.error import DBusError
 
 gi.require_version("GLib", "2.0")
 from gi.repository import GLib
@@ -233,8 +234,10 @@ class InputRemapperControlBin:
     def _quit(self) -> None:
         try:
             self.daemon.quit()
-        except GLib.GError as error:
-            if "NoReply" in str(error):
+        except (DBusError, GLib.GError) as error:
+            if getattr(
+                error, "dbus_name", None
+            ) == "org.freedesktop.DBus.Error.NoReply" or "NoReply" in str(error):
                 # The daemon is expected to terminate, so there won't be a reply.
                 return
 
